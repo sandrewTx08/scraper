@@ -1,0 +1,36 @@
+{
+  "name": "@sans-scrape/scrape",
+  "version": "0.1.0",
+  "description": "Web-scraping library",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "axios": "^0.27.2",
+    "cheerio": "^1.0.0-rc.11",
+    "sans-scrape": "^0.8.0"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sans-scrape/scrape.git"
+  },
+  "keywords": [
+    "scraper",
+    "web-scraping",
+    "typescript",
+    "cheerio",
+    "jquery"
+  ],
+  "author": "sandrewtx08",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sans-scrape/scrape/issues"
+  },
+  "homepage": "https://github.com/sans-scrape/scrape#readme"
+}
