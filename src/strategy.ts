@@ -90,11 +90,23 @@ export class Strategy<T> implements IStrategy<T> {
     return (this.configuration.request.params[
       this.configuration.index.queryString
     ] = !this.configuration.request.params[this.configuration.index.queryString]
-      ? this.configuration.index.options.initial! +
-          (index || 0) * this.configuration.index.options.increment! || 0
-      : this.configuration.request.params[
+      ? this.configuration.request.params[
           this.configuration.index.queryString
-        ] + this.configuration.index.options.increment);
+        ] === 0
+        ? (this.configuration.request.params[
+            this.configuration.index.queryString
+          ] =
+            this.configuration.request.params[
+              this.configuration.index.queryString
+            ] + this.configuration.index.options.increment)
+        : this.configuration.index.options.initial! +
+          (index || 0) * this.configuration.index.options.increment!
+      : (this.configuration.request.params[
+          this.configuration.index.queryString
+        ] =
+          this.configuration.request.params[
+            this.configuration.index.queryString
+          ] + this.configuration.index.options.increment));
   }
 
   /**
