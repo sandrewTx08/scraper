@@ -74,7 +74,7 @@ export declare class Strategy<T> implements IStrategy<T> {
     /**
      * Request a number of pages, then return an array of scrape result.
      * @param {number} size Represents number of request and increment on index.
-     * @param {number} skip Skip indexes of pages.
+     * @param {number | undefined} skip Skip indexes of pages.
      * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
      */
     request<R = Promise<Record<keyof T, any[]>[]>>(size: number, skip?: number): R;

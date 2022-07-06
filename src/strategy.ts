@@ -91,7 +91,7 @@ export class Strategy<T> implements IStrategy<T> {
       this.configuration.index.queryString
     ] = !this.configuration.request.params[this.configuration.index.queryString]
       ? this.configuration.index.options.initial! +
-          (index || 1) * this.configuration.index.options.increment! || 0
+          (index || 0) * this.configuration.index.options.increment! || 0
       : this.configuration.request.params[
           this.configuration.index.queryString
         ] + this.configuration.index.options.increment);

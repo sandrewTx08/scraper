@@ -18,13 +18,13 @@ class Strategy {
     incrementIndex(index) {
         return (this.configuration.request.params[this.configuration.index.queryString] = !this.configuration.request.params[this.configuration.index.queryString]
             ? this.configuration.index.options.initial +
-                (index || 1) * this.configuration.index.options.increment || 0
+                (index || 0) * this.configuration.index.options.increment || 0
             : this.configuration.request.params[this.configuration.index.queryString] + this.configuration.index.options.increment);
     }
     /**
      * Request a number of pages, then return an array of scrape result.
      * @param {number} size Represents number of request and increment on index.
-     * @param {number} skip Skip indexes of pages.
+     * @param {number | undefined} skip Skip indexes of pages.
      * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
      */
     request(size, skip) {
