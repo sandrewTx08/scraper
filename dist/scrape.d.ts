@@ -9,5 +9,5 @@ export interface IScrape<T> {
 export declare class Scrape<T> implements IScrape<T> {
     readonly strategy: ScrapeCallback<T>;
     constructor(strategy: ScrapeCallback<T>);
-    parse(html: string): T;
+    parse(html: string): { [key in keyof T]: any; };
 }

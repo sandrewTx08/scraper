@@ -1,6 +1,5 @@
 import { Axios, AxiosRequestConfig } from "axios";
 import { Scrape, ScrapeCallback } from "./scrape";
-import { Page } from "./page";
 export declare type ScrapeConfiguration<T> = {
     /**
      * Keywords configuration.
@@ -63,18 +62,20 @@ export declare type ScrapeConfiguration<T> = {
     strategy: ScrapeCallback<T>;
 };
 export interface IStrategy<T> {
-    page: Page<T>;
-    request: (arg: number) => Promise<Record<keyof T, any[]>[]>;
+    request: (arg: number, arg2: number) => Promise<Record<keyof T, any[]>[]>;
 }
 export declare class Strategy<T> implements IStrategy<T> {
+    readonly configuration: ScrapeConfiguration<T>;
     readonly session: Axios;
-    readonly page: Page<T>;
     readonly scraper: Scrape<T>;
     constructor(configuration: ScrapeConfiguration<T>);
+    private configureKeywords;
+    private incrementIndex;
     /**
      * Request a number of pages, then return an array of scrape result.
      * @param {number} size Represents number of request and increment on index.
+     * @param {number} skip Skip indexes of pages.
      * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
      */
-    request<R = Promise<Record<keyof T, any[]>[]>>(size: number): R;
+    request<R = Promise<Record<keyof T, any[]>[]>>(size: number, skip?: number): R;
 }

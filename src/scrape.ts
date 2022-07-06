@@ -15,7 +15,7 @@ export interface IScrape<T> {
 export class Scrape<T> implements IScrape<T> {
   constructor(readonly strategy: ScrapeCallback<T>) {}
 
-  parse(html: string): T {
+  parse(html: string) {
     type StrategyKeys = keyof ScrapeCallback<T>;
     type StrategyObject = { [key in StrategyKeys]: any };
 
