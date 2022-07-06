@@ -115,10 +115,10 @@ export class Strategy<T> implements IStrategy<T> {
    * @param {number | undefined} skip Skip indexes of pages.
    * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
    */
-  request<R = Promise<Record<keyof T, any[]>[]>>(
+  request<D = Promise<Record<keyof T, any[]>[]>>(
     size: number,
     skip?: number
-  ): R {
+  ): D {
     const data: Promise<T>[] = [];
     for (let i = 0; i < size; i++) {
       this.incrementIndex(skip);
@@ -126,6 +126,6 @@ export class Strategy<T> implements IStrategy<T> {
         .request(this.configuration.request)
         .then((response) => this.scraper.parse(response.data));
     }
-    return <R>(<any>Promise.all(data));
+    return <D>(<any>Promise.all(data));
   }
 }

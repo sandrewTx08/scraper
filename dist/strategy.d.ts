@@ -77,5 +77,5 @@ export declare class Strategy<T> implements IStrategy<T> {
      * @param {number | undefined} skip Skip indexes of pages.
      * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
      */
-    request<R = Promise<Record<keyof T, any[]>[]>>(size: number, skip?: number): R;
+    request<D = Promise<Record<keyof T, any[]>[]>>(size: number, skip?: number): D;
 }
