@@ -77,7 +77,7 @@ export interface IScraper<T, D> {
   request: (arg: number, arg2: number) => Promise<D[]>;
 }
 
-export class Scraper<T, D = Record<keyof ScrapeCallback<T>, any[]>>
+export class Scraper<T, D = { [K in keyof T]: any[] }>
   implements IScraper<T, D>
 {
   readonly session: Axios = new Axios({});
@@ -120,15 +120,14 @@ export class Scraper<T, D = Record<keyof ScrapeCallback<T>, any[]>>
   }
 
   parse(html: string): D {
-    type StrategyKeys = keyof ScrapeCallback<T>;
     const $page = load(html);
     const object = Object();
 
     Object.keys(this.configuration.strategy).map((key) => {
       const data: any[] = [];
-      const callback = this.configuration.strategy[<StrategyKeys>key];
+      const callback = this.configuration.strategy[<keyof T>key];
       callback($page, (arg) => data.push(arg));
-      object[<StrategyKeys>key] = data;
+      object[<keyof T>key] = data;
     });
 
     return object;

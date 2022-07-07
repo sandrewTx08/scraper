@@ -70,7 +70,9 @@ export interface IScraper<T, D> {
     parse: (arg: string) => D;
     request: (arg: number, arg2: number) => Promise<D[]>;
 }
-export declare class Scraper<T, D = Record<keyof ScrapeCallback<T>, any[]>> implements IScraper<T, D> {
+export declare class Scraper<T, D = {
+    [K in keyof T]: any[];
+}> implements IScraper<T, D> {
     readonly configuration: ScraperConfiguration<T>;
     readonly session: Axios;
     constructor(configuration: ScraperConfiguration<T>);
