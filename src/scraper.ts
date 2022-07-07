@@ -1,7 +1,7 @@
 import { Axios, AxiosRequestConfig } from "axios";
-import { Scrape, ScrapeCallback } from "./scrape";
+import { CheerioAPI, load } from "cheerio";
 
-export type ScrapeConfiguration<T> = {
+export type ScraperConfiguration<T> = {
   /**
    * Keywords configuration.
    * @example
@@ -63,17 +63,27 @@ export type ScrapeConfiguration<T> = {
   strategy: ScrapeCallback<T>;
 };
 
-export interface IStrategy<T> {
-  request: (arg: number, arg2: number) => Promise<Record<keyof T, any[]>[]>;
+export type ScrapeCallback<T> = {
+  [K in keyof T]: <P extends Array<any>["push"]>(
+    $: CheerioAPI,
+    push: P
+  ) => void;
+};
+
+export interface IScraper<T, D> {
+  session: unknown;
+  configuration: ScraperConfiguration<T>;
+  parse: (arg: string) => D;
+  request: (arg: number, arg2: number) => Promise<D[]>;
 }
 
-export class Strategy<T> implements IStrategy<T> {
+export class Scraper<T, D = Record<keyof ScrapeCallback<T>, any[]>>
+  implements IScraper<T, D>
+{
   readonly session: Axios = new Axios({});
-  readonly scraper: Scrape<T>;
 
-  constructor(readonly configuration: ScrapeConfiguration<T>) {
+  constructor(readonly configuration: ScraperConfiguration<T>) {
     this.configureKeywords();
-    this.scraper = new Scrape<T>(configuration.strategy);
   }
 
   private configureKeywords() {
@@ -109,23 +119,37 @@ export class Strategy<T> implements IStrategy<T> {
           ] + this.configuration.index.options.increment));
   }
 
+  parse(html: string): D {
+    type StrategyKeys = keyof ScrapeCallback<T>;
+    const $page = load(html);
+    const object = Object();
+
+    Object.keys(this.configuration.strategy).map((key) => {
+      const data: any[] = [];
+      const callback = this.configuration.strategy[<StrategyKeys>key];
+      callback($page, (arg) => data.push(arg));
+      object[<StrategyKeys>key] = data;
+    });
+
+    return object;
+  }
+
   /**
    * Request a number of pages, then return an array of scrape result.
    * @param {number} size Represents number of request and increment on index.
    * @param {number | undefined} skip Skip indexes of pages.
-   * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
+   * @return {Promise<D[]>} Scrape result objects.
    */
-  request<D = Promise<Record<keyof T, any[]>[]>>(
-    size: number,
-    skip?: number
-  ): D {
-    const data: Promise<T>[] = [];
+  request(size: number, skip?: number): Promise<D[]> {
+    const data = [];
+
     for (let i = 0; i < size; i++) {
       this.incrementIndex(skip);
       data[i] = this.session
         .request(this.configuration.request)
-        .then((response) => this.scraper.parse(response.data));
+        .then((response) => this.parse(response.data));
     }
-    return <D>(<any>Promise.all(data));
+
+    return Promise.all(data);
   }
 }

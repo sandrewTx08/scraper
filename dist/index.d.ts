@@ -1,1 +1,1 @@
-export { Strategy as SanScrape, ScrapeConfiguration } from "./strategy";
+export { Scraper, ScraperConfiguration } from "./scraper";

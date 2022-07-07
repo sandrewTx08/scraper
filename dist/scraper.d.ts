@@ -1,6 +1,6 @@
 import { Axios, AxiosRequestConfig } from "axios";
-import { Scrape, ScrapeCallback } from "./scrape";
-export declare type ScrapeConfiguration<T> = {
+import { CheerioAPI } from "cheerio";
+export declare type ScraperConfiguration<T> = {
     /**
      * Keywords configuration.
      * @example
@@ -61,21 +61,27 @@ export declare type ScrapeConfiguration<T> = {
      */
     strategy: ScrapeCallback<T>;
 };
-export interface IStrategy<T> {
-    request: (arg: number, arg2: number) => Promise<Record<keyof T, any[]>[]>;
+export declare type ScrapeCallback<T> = {
+    [K in keyof T]: <P extends Array<any>["push"]>($: CheerioAPI, push: P) => void;
+};
+export interface IScraper<T, D> {
+    session: unknown;
+    configuration: ScraperConfiguration<T>;
+    parse: (arg: string) => D;
+    request: (arg: number, arg2: number) => Promise<D[]>;
 }
-export declare class Strategy<T> implements IStrategy<T> {
-    readonly configuration: ScrapeConfiguration<T>;
+export declare class Scraper<T, D = Record<keyof ScrapeCallback<T>, any[]>> implements IScraper<T, D> {
+    readonly configuration: ScraperConfiguration<T>;
     readonly session: Axios;
-    readonly scraper: Scrape<T>;
-    constructor(configuration: ScrapeConfiguration<T>);
+    constructor(configuration: ScraperConfiguration<T>);
     private configureKeywords;
     private incrementIndex;
+    parse(html: string): D;
     /**
      * Request a number of pages, then return an array of scrape result.
      * @param {number} size Represents number of request and increment on index.
      * @param {number | undefined} skip Skip indexes of pages.
-     * @return {Promise<Record<keyof T, any[]>[]>} Scrape result objects.
+     * @return {Promise<D[]>} Scrape result objects.
      */
-    request<D = Promise<Record<keyof T, any[]>[]>>(size: number, skip?: number): D;
+    request(size: number, skip?: number): Promise<D[]>;
 }
