@@ -86,40 +86,36 @@ export class Scraper<T, D = { [K in keyof T]: any[] }>
   readonly session: Axios = new Axios({});
 
   constructor(readonly configuration: ScraperConfiguration<T>) {
-    this.configureKeywords();
+    this.configuration.request.params = { ...this.configureKeywords() };
   }
 
   private configureKeywords() {
-    return (this.configuration.request.params = {
-      ...this.configuration.request.params,
-      ...(this.configuration.keywords && {
-        [this.configuration.keywords.queryString]:
-          this.configuration.keywords.value,
-      }),
-    });
+    return this.configuration.keywords
+      ? {
+          [this.configuration.keywords.queryString]:
+            this.configuration.keywords.value,
+        }
+      : null;
   }
 
   private incrementIndex(index?: number) {
-    return (this.configuration.request.params[
-      this.configuration.index.queryString
-    ] = !this.configuration.request.params[this.configuration.index.queryString]
-      ? this.configuration.request.params[
-          this.configuration.index.queryString
-        ] === 0
-        ? (this.configuration.request.params[
-            this.configuration.index.queryString
-          ] =
-            this.configuration.request.params[
-              this.configuration.index.queryString
-            ] + this.configuration.index.options.increment)
+    return (this.index = !this.index
+      ? this.index === 0
+        ? this.index + this.configuration.index.options.increment!
         : this.configuration.index.options.initial! +
           (index || 0) * this.configuration.index.options.increment!
-      : (this.configuration.request.params[
-          this.configuration.index.queryString
-        ] =
-          this.configuration.request.params[
-            this.configuration.index.queryString
-          ] + this.configuration.index.options.increment));
+      : this.index + this.configuration.index.options.increment!);
+  }
+
+  private get index() {
+    return this.configuration.request.params[
+      this.configuration.index.queryString
+    ];
+  }
+
+  private set index(index: number) {
+    this.configuration.request.params[this.configuration.index.queryString] =
+      index;
   }
 
   parse(html: string): D {
