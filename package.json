@@ -1,6 +1,6 @@
 {
   "name": "@sans-scrape/scraper",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "Web-scraping library",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,7 +16,8 @@
     "cheerio": "^1.0.0-rc.11"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "publish": "npm run build && npm publish --access=public"
   },
   "repository": {
     "type": "git",

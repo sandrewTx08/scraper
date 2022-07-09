@@ -4,10 +4,12 @@ export declare type ScraperConfiguration<T> = {
     /**
      * Keywords configuration.
      * @example
-     * // URL = www.website.com/?query="Windows 10"&page=1
-     * keywords: {
-     *   queryString: "query";
-     *   value: "Windows 10";
+     * URL => www.website.com/?query="Windows 10"&page=1
+     * {
+     *   keywords: {
+     *     queryString: "query";
+     *     value: "Windows 10";
+     *   }
      * };
      */
     keywords?: {
@@ -17,13 +19,14 @@ export declare type ScraperConfiguration<T> = {
     /**
      * Index increment strategy.
      * @example
-     * // URL1 = www.website.com/?query="Linux"&page=10
-     * // URL2 = www.website.com/?query="Linux"&page=20
-     * index: {
-     *   queryString: "page";
-     *   options: {
-     *     increment: 10;
-     *     initial: null;
+     * URL1 => www.website.com/?query="Linux"&page=10
+     * URL2 => www.website.com/?query="Linux"&page=20
+     * {
+     *   index: {
+     *     queryString: "page";
+     *     options: {
+     *       increment: 10;
+     *       initial: null;
      *   };
      * };
      */
@@ -57,7 +60,7 @@ export declare type ScraperConfiguration<T> = {
      *       push($(el).text());
      *     });
      *   },
-     * },
+     * };
      */
     strategy: ScrapeCallback<T>;
 };
@@ -78,6 +81,8 @@ export declare class Scraper<T, D = {
     constructor(configuration: ScraperConfiguration<T>);
     private configureKeywords;
     private incrementIndex;
+    private get index();
+    private set index(value);
     parse(html: string): D;
     /**
      * Request a number of pages, then return an array of scrape result.

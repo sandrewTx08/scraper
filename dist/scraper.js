@@ -7,22 +7,29 @@ class Scraper {
     constructor(configuration) {
         this.configuration = configuration;
         this.session = new axios_1.Axios({});
-        this.configureKeywords();
+        this.configuration.request.params = Object.assign({}, this.configureKeywords());
     }
     configureKeywords() {
-        return (this.configuration.request.params = Object.assign(Object.assign({}, this.configuration.request.params), (this.configuration.keywords && {
-            [this.configuration.keywords.queryString]: this.configuration.keywords.value,
-        })));
+        return this.configuration.keywords
+            ? {
+                [this.configuration.keywords.queryString]: this.configuration.keywords.value,
+            }
+            : null;
     }
     incrementIndex(index) {
-        return (this.configuration.request.params[this.configuration.index.queryString] = !this.configuration.request.params[this.configuration.index.queryString]
-            ? this.configuration.request.params[this.configuration.index.queryString] === 0
-                ? (this.configuration.request.params[this.configuration.index.queryString] =
-                    this.configuration.request.params[this.configuration.index.queryString] + this.configuration.index.options.increment)
+        return (this.index = !this.index
+            ? this.index === 0
+                ? this.index + this.configuration.index.options.increment
                 : this.configuration.index.options.initial +
                     (index || 0) * this.configuration.index.options.increment
-            : (this.configuration.request.params[this.configuration.index.queryString] =
-                this.configuration.request.params[this.configuration.index.queryString] + this.configuration.index.options.increment));
+            : this.index + this.configuration.index.options.increment);
+    }
+    get index() {
+        return this.configuration.request.params[this.configuration.index.queryString];
+    }
+    set index(index) {
+        this.configuration.request.params[this.configuration.index.queryString] =
+            index;
     }
     parse(html) {
         const $page = (0, cheerio_1.load)(html);
