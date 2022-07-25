@@ -1,153 +1,58 @@
-import { Axios, AxiosRequestConfig } from "axios";
-import { CheerioAPI, load } from "cheerio";
+import { AxiosRequestConfig, AxiosStatic } from "axios";
+import { Cheerio, CheerioAPI, load } from "cheerio";
 
-export type ScraperConfiguration<T> = {
+export type Configurations = {
   /**
-   * Keywords configuration.
-   * @example
-   * URL => www.website.com/?query="Windows 10"&page=1
-   * {
-   *   keywords: {
-   *     queryString: "query";
-   *     value: "Windows 10";
-   *   }
-   * };
+   * Service used to request data.
    */
-  keywords?: {
-    queryString: string;
-    value: string;
-  };
+  session: AxiosStatic;
   /**
-   * Index increment strategy.
-   * @example
-   * URL1 => www.website.com/?query="Linux"&page=10
-   * URL2 => www.website.com/?query="Linux"&page=20
-   * {
-   *   index: {
-   *     queryString: "page";
-   *     options: {
-   *       increment: 10;
-   *       initial: null;
-   *   };
-   * };
+   * URLs to scrape.
    */
-  index: {
-    queryString: string;
-    options: {
-      increment: number | null;
-      initial: number | null;
-    };
-  };
+  url: string | string[];
+  /**
+   *  Skip indexes of pages.
+   */
+  skip?: number;
+  /**
+   * Represents number of request and increment on index.
+   */
+  size: number;
   /**
    * Request configuration.
    */
   request: AxiosRequestConfig;
-  /**
-   * Represent returning JQuery data manipulation.
-   * @example
-   * {
-   *   description: ($, push) => {
-   *     $("div").each((i, el) => {
-   *       push($(el).text());
-   *     });
-   *   },
-   *   link: ($, push) => {
-   *     $("a[href]").each((i, el) => {
-   *       push($(el).attr("href") || "");
-   *     });
-   *   },
-   *   title: ($, push) => {
-   *     $("h3").each((i, el) => {
-   *       push($(el).text());
-   *     });
-   *   },
-   * };
-   */
-  strategy: ScrapeCallback<T>;
 };
 
-export type ScrapeCallback<T> = {
-  [K in keyof T]: <P extends Array<any>["push"]>(
-    $: CheerioAPI,
-    push: P
-  ) => void;
-};
-
-export interface IScraper<T, D> {
-  session: unknown;
-  configuration: ScraperConfiguration<T>;
-  parse: (arg: string) => D;
-  request: (arg: number, arg2: number) => Promise<D[]>;
-}
-
-export class Scraper<T, D = { [K in keyof T]: any[] }>
-  implements IScraper<T, D>
-{
-  readonly session: Axios = new Axios({});
-
-  constructor(readonly configuration: ScraperConfiguration<T>) {
-    this.configuration.request.params = { ...this.configureKeywords() };
-  }
-
-  private configureKeywords() {
-    return this.configuration.keywords
-      ? {
-          [this.configuration.keywords.queryString]:
-            this.configuration.keywords.value,
-        }
-      : null;
-  }
-
-  private incrementIndex(index?: number) {
-    return (this.index = !this.index
-      ? this.index === 0
-        ? this.index + this.configuration.index.options.increment!
-        : this.configuration.index.options.initial! +
-          (index || 0) * this.configuration.index.options.increment!
-      : this.index + this.configuration.index.options.increment!);
-  }
-
-  private get index() {
-    return this.configuration.request.params[
-      this.configuration.index.queryString
-    ];
-  }
-
-  private set index(index: number) {
-    this.configuration.request.params[this.configuration.index.queryString] =
-      index;
-  }
-
-  parse(html: string): D {
+export function request<
+  T,
+  F extends <R>($: CheerioAPI) => Cheerio<R>,
+  D extends { [KD in keyof T]: F }
+>(
+  strategy: D,
+  options: Configurations
+): Promise<{ [KR in keyof D]: ReturnType<D[KR]> }[]> {
+  function parse(html: string) {
     const $page = load(html);
     const object = Object();
 
-    Object.keys(this.configuration.strategy).map((key) => {
-      const data: any[] = [];
-      const callback = this.configuration.strategy[<keyof T>key];
-      callback($page, (arg) => data.push(arg));
-      object[<keyof T>key] = data;
+    Object.keys(strategy).map((key) => {
+      const data = [];
+      const callback = strategy[<keyof T>key];
+      const d = callback($page);
+      data.push(d);
+      object[key] = data;
     });
 
     return object;
   }
 
-  /**
-   * Request a number of pages, then return an array of scrape result.
-   * @param {number} size Represents number of request and increment on index.
-   * @param {number | undefined} skip Skip indexes of pages.
-   * @return {Promise<D[]>} Scrape result objects.
-   */
-  request(size: number, skip?: number): Promise<D[]> {
-    const data = [];
-
-    for (let i = 0; i < size; i++) {
-      this.incrementIndex(skip);
-      data[i] = this.session
-        .request(this.configuration.request)
-        .then((response) => this.parse(response.data));
-    }
-
-    return Promise.all(data);
+  const data = [];
+  for (let i = 0; i < 1; i++) {
+    data[i] = options.session
+      .request(options.request)
+      .then((response) => parse(response.data));
   }
+
+  return Promise.all(data);
 }
