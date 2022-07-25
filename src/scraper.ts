@@ -43,6 +43,10 @@ export class Scraper<
       i < (this.options.url instanceof Array ? this.options.url.length : 1);
       i++
     ) {
+      this.options.request.url =
+        this.options.url instanceof Array
+          ? this.options.url[i]
+          : this.options.url;
       data[i] = this.options.session
         .request(this.options.request)
         .then((response) => this.parse(response.data));
@@ -55,7 +59,7 @@ export class Scraper<
     const $page = load(html);
     const object = Object();
 
-    Object.keys(this.strategy).map((key) => {
+    Object.keys(this.strategy).forEach((key) => {
       const data = [];
       const callback = this.strategy[<keyof T>key];
       const callback_data = callback($page);
