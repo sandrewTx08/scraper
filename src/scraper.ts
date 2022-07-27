@@ -27,8 +27,7 @@ export type Configurations<T = any> = {
 
 export class Scraper<
   T,
-  Callback extends <El>($: CheerioAPI) => Cheerio<El>,
-  Strategy extends { [K in keyof T]: Callback },
+  Strategy extends { [K in keyof T]: <El>($: CheerioAPI) => Cheerio<El> },
   Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
 > {
   constructor(options: Configurations<Strategy>);
