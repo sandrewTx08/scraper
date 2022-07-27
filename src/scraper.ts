@@ -41,6 +41,8 @@ export class Scraper<
     public readonly strategy?: Strategy
   ) {}
 
+  request(): Promise<Result[]>;
+  request(callback: (result: Result[]) => void): Promise<Result[]>;
   async request(callback?: (result: Result[]) => void): Promise<Result[]> {
     const data = [];
 
