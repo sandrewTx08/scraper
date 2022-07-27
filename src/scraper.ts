@@ -2,7 +2,7 @@ import { AxiosRequestConfig, AxiosStatic } from "axios";
 import { Cheerio, CheerioAPI, load } from "cheerio";
 
 export type Configurations<T = any> = {
-  strategy?: T;
+  strategy: T;
   /**
    * Service used to request data.
    */
@@ -31,7 +31,7 @@ export class Scraper<
   Strategy extends { [K in keyof T]: Callback },
   Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
 > {
-  constructor(options: Required<Configurations<Strategy>>);
+  constructor(options: Configurations<Strategy>);
   constructor(
     options: Omit<Configurations<Strategy>, "strategy">,
     strategy: Strategy
