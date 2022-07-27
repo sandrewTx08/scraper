@@ -41,7 +41,7 @@ export class Scraper<
     public readonly strategy?: Strategy
   ) {}
 
-  request(): Promise<Result[]> {
+  async request(callback?: (result: Result[]) => void): Promise<Result[]> {
     const data = [];
 
     for (
@@ -58,7 +58,9 @@ export class Scraper<
         .then((response) => this.parser(response.data));
     }
 
-    return Promise.all(data);
+    const data_result = await Promise.all(data);
+    if (callback) callback(data_result);
+    return data_result;
   }
 
   parser(html: string): Result {
