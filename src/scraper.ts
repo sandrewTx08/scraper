@@ -27,11 +27,11 @@ export type Configurations = {
 export class Scraper<
   T,
   Callback extends <El>($: CheerioAPI) => Cheerio<El>,
-  Stategy extends { [K in keyof T]: Callback },
-  Result extends { [K in keyof Stategy]: ReturnType<Stategy[K]> }
+  Strategy extends { [K in keyof T]: Callback },
+  Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
 > {
   constructor(
-    public readonly strategy: Stategy,
+    public readonly strategy: Strategy,
     public readonly options: Configurations
   ) {}
 
