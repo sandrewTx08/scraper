@@ -26,16 +26,16 @@ export type Configurations = {
 
 export class Scraper<
   T,
-  F extends <R>($: CheerioAPI) => Cheerio<R>,
-  D extends { [KD in keyof T]: F },
-  R extends { [KR in keyof D]: ReturnType<D[KR]> }
+  Callback extends <El>($: CheerioAPI) => Cheerio<El>,
+  Stategy extends { [K in keyof T]: Callback },
+  Result extends { [K in keyof Stategy]: ReturnType<Stategy[K]> }
 > {
   constructor(
-    public readonly strategy: D,
+    public readonly strategy: Stategy,
     public readonly options: Configurations
   ) {}
 
-  request(): Promise<R[]> {
+  request(): Promise<Result[]> {
     const data = [];
 
     for (
@@ -55,7 +55,7 @@ export class Scraper<
     return Promise.all(data);
   }
 
-  parse(html: string): R {
+  parse(html: string): Result {
     const $page = load(html);
     const object = Object();
 
