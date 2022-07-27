@@ -55,24 +55,22 @@ export class Scraper<
           : this.options.url;
       data[i] = this.options.session
         .request(this.options.request)
-        .then((response) => this.parse(response.data));
+        .then((response) => this.parser(response.data));
     }
 
     return Promise.all(data);
   }
 
-  parse(html: string): Result {
+  parser(html: string): Result {
     const object = Object();
+    const $page = load(html);
 
-    Object.keys(this.strategy ? this.strategy : this.options.strategy!).forEach(
+    Object.keys(this.strategy ? this.strategy : this.options.strategy).forEach(
       (key) => {
-        const data = [];
         const callback = (
-          this.strategy ? this.strategy : this.options.strategy!
-        )[<keyof T>key];
-        const $page = load(html);
-        const callback_data = callback($page);
-        data.push(callback_data);
+          this.strategy ? this.strategy : this.options.strategy
+        )[<keyof Strategy>key];
+        const data = callback($page);
         object[key] = data;
       }
     );
