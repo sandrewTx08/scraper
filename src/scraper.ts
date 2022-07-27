@@ -1,7 +1,8 @@
 import { AxiosRequestConfig, AxiosStatic } from "axios";
 import { Cheerio, CheerioAPI, load } from "cheerio";
 
-export type Configurations = {
+export type Configurations<T = any> = {
+  strategy?: T;
   /**
    * Service used to request data.
    */
@@ -30,9 +31,14 @@ export class Scraper<
   Strategy extends { [K in keyof T]: Callback },
   Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
 > {
+  constructor(options: Required<Configurations<Strategy>>);
   constructor(
-    public readonly strategy: Strategy,
-    public readonly options: Configurations
+    options: Omit<Configurations<Strategy>, "strategy">,
+    strategy: Strategy
+  );
+  constructor(
+    public readonly options: Configurations<Strategy>,
+    public readonly strategy?: Strategy
   ) {}
 
   request(): Promise<Result[]> {
@@ -56,16 +62,20 @@ export class Scraper<
   }
 
   parse(html: string): Result {
-    const $page = load(html);
     const object = Object();
 
-    Object.keys(this.strategy).forEach((key) => {
-      const data = [];
-      const callback = this.strategy[<keyof T>key];
-      const callback_data = callback($page);
-      data.push(callback_data);
-      object[key] = data;
-    });
+    Object.keys(this.strategy ? this.strategy : this.options.strategy!).forEach(
+      (key) => {
+        const data = [];
+        const callback = (
+          this.strategy ? this.strategy : this.options.strategy!
+        )[<keyof T>key];
+        const $page = load(html);
+        const callback_data = callback($page);
+        data.push(callback_data);
+        object[key] = data;
+      }
+    );
 
     return object;
   }
