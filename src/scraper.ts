@@ -29,22 +29,21 @@ export class Scraper<
   ) {}
 
   request(url: string): Promise<Result>;
-  request(
-    url: string,
-    callback: <T = Result>(result: T) => void
-  ): Promise<Result>;
+  request(url: string, callback: (result: Result) => void): Promise<Result>;
   request(url: string[]): Promise<Result[]>;
   request(
     url: string[],
-    callback: <T = Result[]>(result: T) => void
+    callback: (result: Result[]) => void
   ): Promise<Result[]>;
-  async request(
+  async request<T extends string | string[]>(
     /**
      * URLs to scrape.
      */
-    url: string | string[],
-    callback?: (result: Result[] | Result) => void
-  ): Promise<Result[] | Result> {
+    url: T,
+    callback?: T extends string[]
+      ? (result: Result[]) => void
+      : (result: Result) => void
+  ): Promise<T extends string[] ? Result[] : Result> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
@@ -55,13 +54,13 @@ export class Scraper<
     }
 
     if (url instanceof Array) {
-      const data_result = await Promise.all(data);
-      if (callback) callback(data_result);
-      return data_result;
+      const data_result: Result[] = await Promise.all(data);
+      if (callback) callback(<any>data_result);
+      return <any>data_result;
     } else {
-      const data_result = await data[0];
-      if (callback) callback(data_result);
-      return data_result;
+      const data_result: Result = await data[0];
+      if (callback) callback(<any>data_result);
+      return <any>data_result;
     }
   }
 
