@@ -8,18 +8,6 @@ export type Configurations<T = any> = {
    */
   session: AxiosStatic;
   /**
-   * URLs to scrape.
-   */
-  url: string | string[];
-  /**
-   *  Skip indexes of pages.
-   */
-  skip?: number;
-  /**
-   * Represents number of request and increment on index.
-   */
-  size: number;
-  /**
    * Request configuration.
    */
   request: AxiosRequestConfig;
@@ -40,28 +28,41 @@ export class Scraper<
     public readonly strategy?: Strategy
   ) {}
 
-  request(): Promise<Result[]>;
-  request(callback: (result: Result[]) => void): Promise<Result[]>;
-  async request(callback?: (result: Result[]) => void): Promise<Result[]> {
+  request(url: string): Promise<Result>;
+  request(
+    url: string,
+    callback: <T = Result>(result: T) => void
+  ): Promise<Result>;
+  request(url: string[]): Promise<Result[]>;
+  request(
+    url: string[],
+    callback: <T = Result[]>(result: T) => void
+  ): Promise<Result[]>;
+  async request(
+    /**
+     * URLs to scrape.
+     */
+    url: string | string[],
+    callback?: (result: Result[] | Result) => void
+  ): Promise<Result[] | Result> {
     const data = [];
 
-    for (
-      let i = 0;
-      i < (this.options.url instanceof Array ? this.options.url.length : 1);
-      i++
-    ) {
-      this.options.request.url =
-        this.options.url instanceof Array
-          ? this.options.url[i]
-          : this.options.url;
+    for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
+      this.options.request.url = url instanceof Array ? url[i] : url;
       data[i] = this.options.session
         .request(this.options.request)
         .then((response) => this.parser(response.data));
     }
 
-    const data_result = await Promise.all(data);
-    if (callback) callback(data_result);
-    return data_result;
+    if (url instanceof Array) {
+      const data_result = await Promise.all(data);
+      if (callback) callback(data_result);
+      return data_result;
+    } else {
+      const data_result = await data[0];
+      if (callback) callback(data_result);
+      return data_result;
+    }
   }
 
   parser(html: string): Result {
