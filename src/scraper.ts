@@ -54,9 +54,9 @@ export class Scraper<
         .then((response) => this.parser(response.data));
     }
 
-    const data_result: any = await (url instanceof Array
-      ? Promise.all(data)
-      : data[0]);
+    const data_result = <R>(
+      await (url instanceof Array ? Promise.all(data) : data[0])
+    );
     if (callback) callback(data_result);
     return data_result;
   }
