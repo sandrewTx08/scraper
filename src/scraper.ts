@@ -53,15 +53,11 @@ export class Scraper<
         .then((response) => this.parser(response.data));
     }
 
-    if (url instanceof Array) {
-      const data_result: any = await Promise.all(data);
-      if (callback) callback(data_result);
-      return data_result;
-    } else {
-      const data_result: any = await data[0];
-      if (callback) callback(data_result);
-      return data_result;
-    }
+    const data_result: any = await (url instanceof Array
+      ? Promise.all(data)
+      : data[0]);
+    if (callback) callback(data_result);
+    return data_result;
   }
 
   parser(html: string): Result {
