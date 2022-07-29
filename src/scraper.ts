@@ -33,13 +33,7 @@ export class Scraper<
   async request<
     T extends string | string[],
     R extends T extends string[] ? Result[] : Result
-  >(
-    /**
-     * URLs to scrape.
-     */
-    url: T,
-    callback?: (result: R) => void
-  ): Promise<R | void> {
+  >(url: T, callback?: (result: R) => void): Promise<R | void> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
