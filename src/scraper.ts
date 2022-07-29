@@ -30,20 +30,21 @@ export class Scraper<
 
   request(url: string): Promise<Result>;
   request(url: string, callback: (result: Result) => void): Promise<Result>;
-  request(url: string[]): Promise<Result[]>;
+  request(urls: string[]): Promise<Result[]>;
   request(
-    url: string[],
-    callback: (result: Result[]) => void
+    urls: string[],
+    callback: (results: Result[]) => void
   ): Promise<Result[]>;
-  async request<T extends string | string[]>(
+  async request<
+    T extends string | string[],
+    R extends T extends string[] ? Result[] : Result
+  >(
     /**
      * URLs to scrape.
      */
     url: T,
-    callback?: T extends string[]
-      ? (result: Result[]) => void
-      : (result: Result) => void
-  ): Promise<T extends string[] ? Result[] : Result> {
+    callback?: (result: R) => void
+  ): Promise<R> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
