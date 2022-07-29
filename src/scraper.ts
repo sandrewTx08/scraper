@@ -1,7 +1,7 @@
 import { AxiosRequestConfig, AxiosStatic } from "axios";
 import { Cheerio, CheerioAPI, load } from "cheerio";
 
-export type Configurations<T = any> = {
+export type Settings<T = any> = {
   strategy: T;
   /**
    * Service used to request data.
@@ -15,26 +15,21 @@ export type Configurations<T = any> = {
 
 export class Scraper<
   T,
+  SettingOptions extends Settings<Strategy>,
   Strategy extends { [K in keyof T]: <El>($: CheerioAPI) => Cheerio<El> },
   Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
 > {
-  constructor(options: Configurations<Strategy>);
+  constructor(options: SettingOptions);
+  constructor(options: Omit<SettingOptions, "strategy">, strategy: Strategy);
   constructor(
-    options: Omit<Configurations<Strategy>, "strategy">,
-    strategy: Strategy
-  );
-  constructor(
-    public readonly options: Configurations<Strategy>,
+    public readonly options: SettingOptions,
     public readonly strategy?: Strategy
   ) {}
 
   request(url: string): Promise<Result>;
-  request(url: string, callback: (result: Result) => void): Promise<Result>;
+  request(url: string, callback: (result: Result) => void): void;
   request(urls: string[]): Promise<Result[]>;
-  request(
-    urls: string[],
-    callback: (results: Result[]) => void
-  ): Promise<Result[]>;
+  request(urls: string[], callback: (results: Result[]) => void): void;
   async request<
     T extends string | string[],
     R extends T extends string[] ? Result[] : Result
@@ -44,7 +39,7 @@ export class Scraper<
      */
     url: T,
     callback?: (result: R) => void
-  ): Promise<R> {
+  ): Promise<R | void> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
@@ -58,7 +53,7 @@ export class Scraper<
       await (url instanceof Array ? Promise.all(data) : data[0])
     );
     if (callback) callback(data_result);
-    return data_result;
+    else return data_result;
   }
 
   parser(html: string): Result {
