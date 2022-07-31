@@ -1,16 +1,11 @@
-import { AxiosRequestConfig, AxiosStatic } from "axios";
 import { Cheerio, CheerioAPI, load } from "cheerio";
 
 export type Settings<T = any> = {
   strategy: T;
   /**
-   * Service used to request data.
-   */
-  session: AxiosStatic;
-  /**
    * Request configuration.
    */
-  request: AxiosRequestConfig;
+  request?: { init: RequestInit };
 };
 
 export class Scraper<
@@ -37,10 +32,12 @@ export class Scraper<
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
-      this.options.request.url = url instanceof Array ? url[i] : url;
-      data[i] = this.options.session
-        .request(this.options.request)
-        .then((response) => this.parser(response.data));
+      data[i] = fetch(
+        url instanceof Array ? url[i] : url,
+        this.options.request?.init
+      )
+        .then((response) => response.text())
+        .then((text) => this.parser(text));
     }
 
     const data_result = <R>(
