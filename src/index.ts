@@ -1,1 +1,1 @@
-export { Scraper, ScraperConfiguration } from "./scraper";
+export { createScraper } from "./scraper";

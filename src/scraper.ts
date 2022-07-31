@@ -1,43 +1,40 @@
 import { Cheerio, CheerioAPI, load } from "cheerio";
+import { createServer } from "http";
 
-export type Settings<T = any> = {
-  strategy: T;
-  /**
-   * Request configuration.
-   */
-  request?: { init: RequestInit };
-};
-
-export class Scraper<
+function createScraper<
   T,
-  SettingOptions extends Settings<Strategy>,
-  Strategy extends { [K in keyof T]: <El>($: CheerioAPI) => Cheerio<El> },
+  Strategy extends { [K in keyof T]: <R>($: CheerioAPI) => Cheerio<R> },
   Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
-> {
-  constructor(options: SettingOptions);
-  constructor(options: Omit<SettingOptions, "strategy">, strategy: Strategy);
-  constructor(
-    public readonly options: SettingOptions,
-    public readonly strategy?: Strategy
-  ) {}
+>(strategy: Strategy) {
+  function parser(html: any): Result {
+    const object = Object();
 
-  request(url: string): Promise<Result>;
-  request(url: string, callback: (result: Result) => void): void;
-  request(urls: string[]): Promise<Result[]>;
-  request(urls: string[], callback: (results: Result[]) => void): void;
-  async request<
+    Object.keys(strategy).forEach((key) => {
+      const callback = strategy[<keyof Strategy>key];
+      const data = callback(load(html));
+      object[key] = data;
+    });
+
+    return object;
+  }
+
+  function staticRequest(url: string): Promise<Result>;
+  function staticRequest(url: string, callback: (result: Result) => void): void;
+  function staticRequest(urls: string[]): Promise<Result[]>;
+  function staticRequest(
+    urls: string[],
+    callback: (results: Result[]) => void
+  ): void;
+  async function staticRequest<
     T extends string | string[],
     R extends T extends string[] ? Result[] : Result
   >(url: T, callback?: (result: R) => void): Promise<R | void> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
-      data[i] = fetch(
-        url instanceof Array ? url[i] : url,
-        this.options.request?.init
-      )
+      data[i] = fetch(url instanceof Array ? url[i] : url)
         .then((response) => response.text())
-        .then((text) => this.parser(text));
+        .then((text) => parser(text));
     }
 
     const data_result = <R>(
@@ -47,20 +44,30 @@ export class Scraper<
     else return data_result;
   }
 
-  parser(html: string): Result {
-    const object = Object();
-    const $page = load(html);
+  function createRouter<T extends typeof staticRequest>(
+    port: number,
+    request: T
+  ) {
+    return createServer((req, res) => {
+      const url = req.url!.slice(1);
+      request(url, (result) => {
+        const object = Object();
 
-    Object.keys(this.strategy ? this.strategy : this.options.strategy).forEach(
-      (key) => {
-        const callback = (
-          this.strategy ? this.strategy : this.options.strategy
-        )[<keyof Strategy>key];
-        const data = callback($page);
-        object[key] = data;
-      }
-    );
+        Object.keys(result).forEach((key) => {
+          object[key] = result[<keyof Result>key].toArray();
+        });
 
-    return object;
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(object));
+      });
+    }).listen(port);
   }
+
+  return {
+    createRouter,
+    request: { staticRequest },
+    parser,
+  };
 }
+
+export { createScraper };
