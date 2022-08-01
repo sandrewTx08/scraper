@@ -1,5 +1,9 @@
 import { CheerioAPI } from "cheerio";
 
-type Return<T> = { [K in keyof T]: ($: CheerioAPI) => T[K] };
+type ArrayReturn = (<R>($: CheerioAPI) => R)[];
 
-export { Return };
+type ObjectReturn<T> = { [K in keyof T]: ($: CheerioAPI) => T[K] };
+
+type Return<T> = ObjectReturn<T> | ArrayReturn;
+
+export { Return, ObjectReturn };

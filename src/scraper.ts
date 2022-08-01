@@ -13,16 +13,18 @@ class Scraper<T> {
     this.request = new request<T>(this);
   }
 
-  parser<T extends Parameters<typeof load>[0]>(html: T) {
-    const object = Object();
+  parser<T extends string>(html: T): Return<T> {
+    if (!(this.strategy instanceof Array)) {
+      const object = Object();
 
-    Object.keys(this.strategy).forEach((key) => {
-      const callback = this.strategy[<keyof typeof this.strategy>key];
-      const data = callback(load(html));
-      object[key] = data;
-    });
+      Object.keys(this.strategy).forEach((key) => {
+        const callback = (<any>this.strategy)[<keyof typeof this.strategy>key];
+        const data = callback(load(html));
+        object[key] = data;
+      });
 
-    return object;
+      return object;
+    } else return this.strategy.map((v) => v(load(html)));
   }
 
   createRouter(port: number) {
@@ -30,16 +32,19 @@ class Scraper<T> {
       const url = req.url!.slice(1);
 
       this.request.request(url, (result) => {
-        const object = Object();
-
-        Object.keys(result).forEach((key) => {
-          object[key] = (<any>result)[
-            <keyof typeof this.strategy>key
-          ].toArray();
-        });
-
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(object));
+
+        if (!(result instanceof Array)) {
+          const object = Object();
+
+          Object.keys(result).forEach((key) => {
+            object[key] = (<any>(
+              result[<keyof typeof this.strategy>key]
+            )).toArray();
+          });
+
+          res.end(JSON.stringify(object));
+        } else res.end(JSON.stringify(result.map((v: any) => v.toArray())));
       });
     }).listen(port);
   }
