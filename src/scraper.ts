@@ -1,14 +1,14 @@
 import { load } from "cheerio";
 import { createServer } from "http";
 import { StaticRequest } from "./request";
-import { Strategy } from "./type";
+import { Return } from "./type";
 
 class Scraper<T> {
   request: StaticRequest<T>;
 
   constructor(
     request: typeof StaticRequest,
-    public readonly strategy: Strategy<T>
+    public readonly strategy: Return<T>
   ) {
     this.request = new request(this);
   }
@@ -33,9 +33,9 @@ class Scraper<T> {
         const object = Object();
 
         Object.keys(result).forEach((key) => {
-          object[key] = (<any>(
-            result[<keyof typeof this.strategy>key]
-          )).toArray();
+          object[key] = (<any>result)[
+            <keyof typeof this.strategy>key
+          ].toArray();
         });
 
         res.writeHead(200, { "Content-Type": "application/json" });

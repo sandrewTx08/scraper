@@ -1,4 +1,4 @@
-import { Result } from "./type";
+import { Return } from "./type";
 import axios from "axios";
 import { Scraper } from "./scraper";
 
@@ -7,13 +7,13 @@ class Request {
 }
 
 class StaticRequest<T> extends Request {
-  request(url: string): Promise<Result<T>>;
-  request(url: string, callback: (result: Result<T>) => void): void;
-  request(urls: string[]): Promise<Result<T>[]>;
-  request(urls: string[], callback: (results: Result<T>[]) => void): void;
+  request(url: string): Promise<Return<T>>;
+  request(url: string, callback: (result: Return<T>) => void): void;
+  request(urls: string[]): Promise<Return<T>[]>;
+  request(urls: string[], callback: (results: Return<T>[]) => void): void;
   async request<
     T extends string | string[],
-    R extends T extends string[] ? Result<T>[] : Result<T>
+    R extends T extends string[] ? Return<T>[] : Return<T>
   >(url: T, callback?: (result: R) => void): Promise<R | void> {
     const data = [];
 
