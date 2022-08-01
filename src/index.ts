@@ -1,1 +1,1 @@
-export { createScraper } from "./scraper";
+export { Scraper } from "./scraper";

@@ -1,16 +1,15 @@
-import { Cheerio, CheerioAPI, load } from "cheerio";
+import { load } from "cheerio";
 import { createServer } from "http";
+import { Strategy, Result } from "./type";
 
-function createScraper<
-  T,
-  Strategy extends { [K in keyof T]: <R>($: CheerioAPI) => Cheerio<R> },
-  Result extends { [K in keyof Strategy]: ReturnType<Strategy[K]> }
->(strategy: Strategy) {
-  function parser(html: any): Result {
+class Scraper<T> {
+  constructor(public readonly strategy: Strategy<T>) {}
+
+  parser<T extends Parameters<typeof load>[0]>(html: T) {
     const object = Object();
 
-    Object.keys(strategy).forEach((key) => {
-      const callback = strategy[<keyof Strategy>key];
+    Object.keys(this.strategy).forEach((key) => {
+      const callback = this.strategy[<keyof typeof this.strategy>key];
       const data = callback(load(html));
       object[key] = data;
     });
@@ -18,23 +17,20 @@ function createScraper<
     return object;
   }
 
-  function staticRequest(url: string): Promise<Result>;
-  function staticRequest(url: string, callback: (result: Result) => void): void;
-  function staticRequest(urls: string[]): Promise<Result[]>;
-  function staticRequest(
-    urls: string[],
-    callback: (results: Result[]) => void
-  ): void;
-  async function staticRequest<
+  staticRequest(url: string): Promise<Result<T>>;
+  staticRequest(url: string, callback: (result: Result<T>) => void): void;
+  staticRequest(urls: string[]): Promise<Result<T>[]>;
+  staticRequest(urls: string[], callback: (results: Result<T>[]) => void): void;
+  async staticRequest<
     T extends string | string[],
-    R extends T extends string[] ? Result[] : Result
+    R extends T extends string[] ? Result<T>[] : Result<T>
   >(url: T, callback?: (result: R) => void): Promise<R | void> {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
       data[i] = fetch(url instanceof Array ? url[i] : url)
         .then((response) => response.text())
-        .then((text) => parser(text));
+        .then((text) => this.parser(text));
     }
 
     const data_result = <R>(
@@ -44,7 +40,7 @@ function createScraper<
     else return data_result;
   }
 
-  function createRouter<T extends typeof staticRequest>(
+  createRouter<T extends typeof Scraper.prototype.staticRequest>(
     port: number,
     request: T
   ) {
@@ -54,7 +50,7 @@ function createScraper<
         const object = Object();
 
         Object.keys(result).forEach((key) => {
-          object[key] = result[<keyof Result>key].toArray();
+          object[key] = result[key].toArray();
         });
 
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -62,12 +58,6 @@ function createScraper<
       });
     }).listen(port);
   }
-
-  return {
-    createRouter,
-    request: { staticRequest },
-    parser,
-  };
 }
 
-export { createScraper };
+export { Scraper };
