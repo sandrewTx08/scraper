@@ -10,7 +10,7 @@ class Scraper<T> {
     request: typeof StaticRequest,
     public readonly strategy: Return<T>
   ) {
-    this.request = new request(this);
+    this.request = new request<T>(this);
   }
 
   parser<T extends Parameters<typeof load>[0]>(html: T) {

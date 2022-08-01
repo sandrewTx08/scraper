@@ -2,11 +2,11 @@ import { Return } from "./type";
 import axios from "axios";
 import { Scraper } from "./scraper";
 
-class Request {
-  constructor(protected scraper: Scraper<unknown>) {}
+class Request<T> {
+  constructor(protected scraper: Scraper<T>) {}
 }
 
-class StaticRequest<T> extends Request {
+class StaticRequest<T> extends Request<T> {
   request(url: string): Promise<Return<T>>;
   request(url: string, callback: (result: Return<T>) => void): void;
   request(urls: string[]): Promise<Return<T>[]>;
