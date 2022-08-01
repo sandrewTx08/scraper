@@ -33,7 +33,9 @@ class Scraper<T> {
         const object = Object();
 
         Object.keys(result).forEach((key) => {
-          object[key] = result[<keyof typeof this.strategy>key].toArray();
+          object[key] = (<any>(
+            result[<keyof typeof this.strategy>key]
+          )).toArray();
         });
 
         res.writeHead(200, { "Content-Type": "application/json" });
