@@ -18,8 +18,8 @@ class StaticRequest<T> extends Request {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
-      data[i] = axios(url instanceof Array ? url[i] : url).then((text) =>
-        this.scraper.parser(text.data)
+      data[i] = axios(url instanceof Array ? url[i] : url).then((response) =>
+        this.scraper.parser(response.data)
       );
     }
 
