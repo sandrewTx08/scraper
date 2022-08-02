@@ -1,53 +1,114 @@
+import axios from "axios";
 import { load } from "cheerio";
-import { createServer } from "http";
-import { StaticRequest } from "./request";
-import { Return } from "./type";
+import express from "express";
+import { Cheerio, CheerioAPI } from "cheerio";
 
-class Scraper<T> {
-  request: StaticRequest<T>;
+type ReturnArray = (($: CheerioAPI) => Cheerio<any>)[];
 
-  constructor(
-    request: typeof StaticRequest,
-    public readonly strategy: Return<T>
-  ) {
-    this.request = new request<T>(this);
-  }
+type ReturnObject<T> = { [K in keyof T]: ($: CheerioAPI) => Cheerio<any> };
 
-  parser<T extends string>(html: T): Return<T> {
-    if (!(this.strategy instanceof Array)) {
+type ReturnCallback = ($: CheerioAPI) => Cheerio<any>;
+
+type Return<T> = ReturnObject<T> | ReturnArray | ReturnCallback;
+
+function createScraper<T>(strategy: Return<T>) {
+  function parser(html: string) {
+    const $page = load(html);
+
+    function returnObject<T>(strategy: ReturnObject<T>): {
+      [K in keyof T]: Cheerio<any>;
+    } {
       const object = Object();
 
-      Object.keys(this.strategy).forEach((key) => {
-        const callback = (<any>this.strategy)[<keyof typeof this.strategy>key];
-        const data = callback(load(html));
-        object[key] = data;
+      Object.keys(strategy).forEach((key) => {
+        const callback = strategy[<keyof typeof strategy>key];
+        object[key] = callback($page);
       });
 
       return object;
-    } else return this.strategy.map((v) => v(load(html)));
+    }
+
+    function returnArray(strategy: ReturnArray): Cheerio<any>[] {
+      return strategy.map((callback) => callback($page));
+    }
+
+    function returnCallback(strategy: ReturnCallback): Cheerio<any> {
+      return strategy($page);
+    }
+
+    return strategy instanceof Array
+      ? returnArray(strategy)
+      : typeof strategy === "function"
+      ? returnCallback(strategy)
+      : returnObject(strategy);
   }
 
-  createRouter(port: number) {
-    return createServer((req, res) => {
-      const url = req.url!.slice(1);
+  function createRouter(request: any, hostname: string) {
+    const app = express();
 
-      this.request.request(url, (result) => {
-        res.writeHead(200, { "Content-Type": "application/json" });
+    app.get(hostname, (req, res) => {
+      const url = req.url.slice(1);
 
-        if (!(result instanceof Array)) {
-          const object = Object();
-
-          Object.keys(result).forEach((key) => {
-            object[key] = (<any>(
-              result[<keyof typeof this.strategy>key]
-            )).toArray();
+      request(url, (result: any) => {
+        if (result instanceof Array)
+          return result.map((v) => {
+            res.json(result.map((v) => v.toArray()));
           });
+        else {
+          try {
+            const object = Object();
 
-          res.end(JSON.stringify(object));
-        } else res.end(JSON.stringify(result.map((v: any) => v.toArray())));
+            Object.keys(result).forEach((key) => {
+              object[key] = result[key].toArray();
+            });
+
+            res.json(object);
+          } catch {
+            res.json(result.toArray());
+          }
+        }
       });
-    }).listen(port);
+    });
+
+    return app;
   }
+
+  type S = typeof strategy;
+
+  type RT = S extends ReturnArray
+    ? Cheerio<any>[]
+    : S extends ReturnObject<T>
+    ? Cheerio<any>
+    : {
+        [K in keyof T]: Cheerio<any>;
+      };
+
+  async function staticRequest<
+    T extends string | string[],
+    R extends T extends string[] ? RT[] : RT
+  >(url: T, callback?: (result: R) => void) {
+    const data = [];
+
+    for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
+      data[i] = axios(url instanceof Array ? url[i] : url).then((response) =>
+        parser(response.data)
+      );
+    }
+
+    const data_result = <R>(
+      await (url instanceof Array ? Promise.all(data) : data[0])
+    );
+
+    if (callback) callback(data_result);
+    else return data_result;
+  }
+
+  return {
+    createRouter,
+    parser,
+    staticRequest,
+  };
 }
 
-export { Scraper };
+export { createScraper };
+export { Return, ReturnObject, ReturnArray, ReturnCallback };
