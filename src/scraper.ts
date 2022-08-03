@@ -43,11 +43,11 @@ function createScraper<T>(strategy: Return<T>) {
       : returnObject(strategy);
   }
 
-  function createRouter(request: any, hostname: string) {
+  function createRouter(request: Function, hostname: string) {
     const app = express();
 
-    app.get(hostname, (req, res) => {
-      const url = req.url.slice(1);
+    app.use((req, res) => {
+      const url = hostname + req.url.slice(1);
 
       request(url, (result: any) => {
         if (result instanceof Array)
