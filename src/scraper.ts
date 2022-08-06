@@ -30,15 +30,19 @@ function createScraper<Mode extends ModeObject>(mode: Mode) {
     return app.use((req, res) => {
       const url = hostname + req.url.slice(1);
 
-      request(url, (result: any) => {
-        const object = Object();
+      try {
+        request(url, (result: any) => {
+          const object = Object();
 
-        Object.keys(result).forEach((key) => {
-          object[key] = result[key].toArray();
+          Object.keys(result).forEach((key) => {
+            object[key] = result[key].toArray();
+          });
+
+          res.json(object);
         });
-
-        res.json(object);
-      });
+      } catch (error: any) {
+        res.json(error.message);
+      }
     });
   }
 
