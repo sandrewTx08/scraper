@@ -1,1 +1,6 @@
-export { Scraper } from "./scraper";
+export {
+  createScraper,
+  ModeObjectReturn,
+  ModeObject,
+  ScrapeCallback,
+} from "./scraper";

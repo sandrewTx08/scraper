@@ -3,95 +3,66 @@ import { load } from "cheerio";
 import express from "express";
 import { Cheerio, CheerioAPI } from "cheerio";
 
-type ReturnArray = (($: CheerioAPI) => Cheerio<any>)[];
+type ModeObject = { [x: string]: ScrapeCallback };
 
-type ReturnObject<T> = { [K in keyof T]: ($: CheerioAPI) => Cheerio<any> };
+type ModeObjectReturn<T extends ModeObject> = {
+  [K in keyof T]: ReturnType<T[K]>;
+};
 
-type ReturnCallback = ($: CheerioAPI) => Cheerio<any>;
+type ScrapeCallback = ($: CheerioAPI) => Cheerio<any>;
 
-type Return<T> = ReturnObject<T> | ReturnArray | ReturnCallback;
-
-function createScraper<T>(strategy: Return<T>) {
-  function parser(html: string) {
+function createScraper<Mode extends ModeObject>(mode: Mode) {
+  function returnObject(html: string): ModeObjectReturn<Mode> {
     const $page = load(html);
+    const object = Object();
 
-    function returnObject<T>(strategy: ReturnObject<T>): {
-      [K in keyof T]: Cheerio<any>;
-    } {
-      const object = Object();
-
-      Object.keys(strategy).forEach((key) => {
-        const callback = strategy[<keyof typeof strategy>key];
-        object[key] = callback($page);
-      });
-
-      return object;
-    }
-
-    function returnArray(strategy: ReturnArray): Cheerio<any>[] {
-      return strategy.map((callback) => callback($page));
-    }
-
-    function returnCallback(strategy: ReturnCallback): Cheerio<any> {
-      return strategy($page);
-    }
-
-    return strategy instanceof Array
-      ? returnArray(strategy)
-      : typeof strategy === "function"
-      ? returnCallback(strategy)
-      : returnObject(strategy);
-  }
-
-  function createRouter(request: any, hostname: string) {
-    const app = express();
-
-    app.get(hostname, (req, res) => {
-      const url = req.url.slice(1);
-
-      request(url, (result: any) => {
-        if (result instanceof Array)
-          return result.map((v) => {
-            res.json(result.map((v) => v.toArray()));
-          });
-        else {
-          try {
-            const object = Object();
-
-            Object.keys(result).forEach((key) => {
-              object[key] = result[key].toArray();
-            });
-
-            res.json(object);
-          } catch {
-            res.json(result.toArray());
-          }
-        }
-      });
+    Object.keys(mode).forEach((key) => {
+      const callback = mode[<keyof typeof mode>key];
+      object[key] = callback($page);
     });
 
-    return app;
+    return object;
   }
 
-  type S = typeof strategy;
+  function createExpress(request: Function, hostname: string) {
+    const app = express();
 
-  type RT = S extends ReturnArray
-    ? Cheerio<any>[]
-    : S extends ReturnObject<T>
-    ? Cheerio<any>
-    : {
-        [K in keyof T]: Cheerio<any>;
-      };
+    return app.use((req, res) => {
+      const url = hostname + req.url.slice(1);
 
+      request(url, (result: any) => {
+        const object = Object();
+
+        Object.keys(result).forEach((key) => {
+          object[key] = result[key].toArray();
+        });
+
+        res.json(object);
+      });
+    });
+  }
+
+  function staticRequest(url: string): Promise<ModeObjectReturn<Mode>>;
+  function staticRequest(
+    url: string,
+    callback: (result: ModeObjectReturn<Mode>) => void
+  ): void;
+  function staticRequest(urls: string[]): Promise<ModeObjectReturn<Mode>[]>;
+  function staticRequest(
+    urls: string[],
+    callback: (results: ModeObjectReturn<Mode>[]) => void
+  ): void;
   async function staticRequest<
     T extends string | string[],
-    R extends T extends string[] ? RT[] : RT
+    R extends T extends string[]
+      ? ModeObjectReturn<Mode>[]
+      : ModeObjectReturn<Mode>
   >(url: T, callback?: (result: R) => void) {
     const data = [];
 
     for (let i = 0; i < (url instanceof Array ? url.length : 1); i++) {
       data[i] = axios(url instanceof Array ? url[i] : url).then((response) =>
-        parser(response.data)
+        returnObject(response.data)
       );
     }
 
@@ -103,12 +74,7 @@ function createScraper<T>(strategy: Return<T>) {
     else return data_result;
   }
 
-  return {
-    createRouter,
-    parser,
-    staticRequest,
-  };
+  return { staticRequest, createExpress };
 }
 
-export { createScraper };
-export { Return, ReturnObject, ReturnArray, ReturnCallback };
+export { ModeObject, ModeObjectReturn, ScrapeCallback, createScraper };
