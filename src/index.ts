@@ -1,6 +1,8 @@
 export {
   createScraper,
-  ModeObjectReturn,
+  Modes,
+  ModeCallback,
+  ScraperCallback,
   ModeObject,
-  ScrapeCallback,
+  ModeArray
 } from "./scraper";
