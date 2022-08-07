@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosRequestConfig } from "axios";
 import { load } from "cheerio";
 import express from "express";
 import { Cheerio, CheerioAPI } from "cheerio";
@@ -46,6 +46,20 @@ function createScraper<Mode extends ModeObject>(mode: Mode) {
     });
   }
 
+  function staticRequest(
+    url: AxiosRequestConfig<any>
+  ): Promise<ModeObjectReturn<Mode>>;
+  function staticRequest(
+    url: AxiosRequestConfig<any>,
+    callback: (result: ModeObjectReturn<Mode>) => void
+  ): void;
+  function staticRequest(
+    urls: AxiosRequestConfig<any>[]
+  ): Promise<ModeObjectReturn<Mode>[]>;
+  function staticRequest(
+    urls: AxiosRequestConfig<any>[],
+    callback: (results: ModeObjectReturn<Mode>[]) => void
+  ): void;
   function staticRequest(url: string): Promise<ModeObjectReturn<Mode>>;
   function staticRequest(
     url: string,
