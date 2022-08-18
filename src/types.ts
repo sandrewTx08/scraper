@@ -2,8 +2,8 @@
 import { Cheerio, CheerioAPI } from "cheerio";
 import { Express } from "express";
 
-export interface IModeClass {
-    parser(html: string): any
+export interface IModeClass<T extends Modes> {
+    parser(html: string): ModesReturn<T>
     createExpress(request: Function, hostname: string): Express
 }
 

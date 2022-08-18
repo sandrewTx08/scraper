@@ -1,5 +1,5 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { ModeArrayClass, ModeCallbackClass, ModeObjectClass } from "./parse";
+import { ModeArrayClass, ModeCallbackClass, ModeObjectClass } from "./parser";
 import { ModeArray, ModeCallback, ModeObject, Modes, ModesReturn } from "./types";
 
 function createScraper<Mode extends Modes>(mode: Mode) {
