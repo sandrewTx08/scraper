@@ -3,37 +3,35 @@ import { load } from "cheerio";
 import express, { Express } from "express";
 import { Cheerio, CheerioAPI } from "cheerio";
 
-type ScraperCallback = ($: CheerioAPI) => Cheerio<any>;
+type ModeCallback = ($: CheerioAPI) => Cheerio<any>;
 
-type ModeObject = { [x: string]: ScraperCallback };
+type ModeObject = { [x: string]: ModeCallback };
 
-type ModeCallback = ScraperCallback;
-
-type ModeArray = ScraperCallback[];
+type ModeArray = ModeCallback[];
 
 type ModesReturn<T extends Modes> =
-  T extends ModeObject ? {
-    [K in keyof T]: ReturnType<T[K]>;
-  }
+  T extends ModeObject ? { [K in keyof T]: ReturnType<T[K]>; }
   : T extends ModeCallback ? ReturnType<T>
-  : T extends (infer I extends ScraperCallback)[] ? ReturnType<I>[]
+  : T extends (infer I extends ModeCallback)[] ? ReturnType<I>[]
   : never;
 
 type Modes = ModeObject | ModeCallback | ModeArray;
 
+interface IModeClass {
+  parser(html: string): any
+  createExpress(request: Function, hostname: string): Express
+}
 
 function createScraper<Mode extends Modes>(mode: Mode) {
-  interface IModeClass {
-    parser(html: string): any
-    createExpress(request: Function, hostname: string): Express
-  }
 
   const ModeClass =
     mode instanceof Array
       ? class ModeArrayClass implements IModeClass {
+        constructor(public mode: ModeArray) { }
+
         parser(html: string) {
           const $page = load(html);
-          return mode.map((callback) => callback($page));
+          return this.mode.map((callback) => callback($page));
         }
 
         createExpress(request: Function, hostname: string) {
@@ -43,8 +41,8 @@ function createScraper<Mode extends Modes>(mode: Mode) {
             const url = hostname + req.url.slice(1);
 
             try {
-              request(url, (result: any) => {
-                res.json(result.map((data: any) => (data.toArray())));
+              request(url, (result: ModesReturn<ModeArray>) => {
+                res.json(result.map((data) => data.toArray()));
               });
             } catch (error: any) {
               res.json(error.message);
@@ -54,9 +52,11 @@ function createScraper<Mode extends Modes>(mode: Mode) {
       }
       : typeof mode === "function"
         ? class ModeCallbackClass implements IModeClass {
+          constructor(private mode: ModeCallback) { }
+
           parser(html: string) {
             const $page = load(html);
-            return mode($page);
+            return this.mode($page);
           }
 
           createExpress(request: Function, hostname: string) {
@@ -66,7 +66,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
               const url = hostname + req.url.slice(1);
 
               try {
-                request(url, (result: any) => {
+                request(url, (result: ModesReturn<ModeCallback>) => {
                   res.json(result.toArray())
                 });
               } catch (error: any) {
@@ -76,13 +76,15 @@ function createScraper<Mode extends Modes>(mode: Mode) {
           }
         }
         : class ModeObjectClass implements IModeClass {
+          constructor(private mode: ModeObject) { }
+
           parser(html: string) {
             const $page = load(html);
             const object = Object();
 
             Object.keys(mode).forEach((key) => {
-              const callback = mode[<keyof typeof mode>key];
-              object[key] = (<any>callback)($page);
+              const callback = this.mode[key];
+              object[key] = callback($page);
             });
 
             return object;
@@ -95,7 +97,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
               const url = hostname + req.url.slice(1);
 
               try {
-                request(url, (result: any) => {
+                request(url, (result: ModesReturn<ModeObject>) => {
                   const object = Object();
 
                   Object.keys(result).forEach((key) => {
@@ -111,7 +113,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
           }
         };
 
-  const modeClass = new ModeClass();
+  const modeClass = new ModeClass(<any>mode);
 
   function staticPage(config: AxiosRequestConfig<any>): Promise<ModesReturn<Mode>>;
   function staticPage(config: AxiosRequestConfig<any>, callback: (result: ModesReturn<Mode>) => void): void;
@@ -121,13 +123,14 @@ function createScraper<Mode extends Modes>(mode: Mode) {
   function staticPage(url: string, callback: (result: ModesReturn<Mode>) => void): void;
   function staticPage(urls: string[]): Promise<ModesReturn<Mode>[]>;
   function staticPage(urls: string[], callback: (results: ModesReturn<Mode>[]) => void): void;
-  async function staticPage<T extends string | string[], R extends T extends string[] ? ModesReturn<Mode>[] : ModesReturn<Mode>>(urlOrConfigs: T, callback?: (result: R) => void) {
+  async function staticPage<T extends string | AxiosRequestConfig<any>, R extends T extends any[] ? ModesReturn<Mode>[] : ModesReturn<Mode>>(urlOrConfigs: T, callback?: (result: R) => void) {
     const data = [];
 
     for (let i = 0; i < (urlOrConfigs instanceof Array ? urlOrConfigs.length : 1); i++) {
-      data[i] = axios(urlOrConfigs instanceof Array ? urlOrConfigs[i] : urlOrConfigs).then((response) =>
-        modeClass.parser(response.data)
-      );
+      data[i] = axios(urlOrConfigs instanceof Array ? urlOrConfigs[i] : urlOrConfigs)
+        .then((response) =>
+          modeClass.parser(response.data)
+        );
     }
 
     const data_result = <R>(
@@ -141,4 +144,4 @@ function createScraper<Mode extends Modes>(mode: Mode) {
   return { request: { staticPage }, express: modeClass.createExpress };
 }
 
-export { createScraper, ModeCallback, ModesReturn, ModeObject, ScraperCallback, Modes, ModeArray };
+export { createScraper, ModeCallback, ModesReturn, ModeObject, Modes, ModeArray };
