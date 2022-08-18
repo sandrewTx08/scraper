@@ -9,10 +9,12 @@ type ModeObject = { [x: string]: ModeCallback };
 
 type ModeArray = ModeCallback[];
 
-type ModesReturn<T extends Modes> =
-  T extends ModeObject ? { [K in keyof T]: ReturnType<T[K]>; }
-  : T extends ModeCallback ? ReturnType<T>
-  : T extends (infer I extends ModeCallback)[] ? ReturnType<I>[]
+type ModesReturn<T extends Modes> = T extends ModeObject ? { [K in keyof T]:
+  ReturnType<T[K]> extends Cheerio<any> ? ReturnType<T[K]> : never }
+  : T extends ModeCallback ?
+  ReturnType<T> extends Cheerio<any> ? ReturnType<T> : never
+  : T extends (infer I extends ModeCallback)[] ?
+  ReturnType<I>[] extends Cheerio<any>[] ? ReturnType<I>[] : never
   : never;
 
 type Modes = ModeObject | ModeCallback | ModeArray;
@@ -23,13 +25,12 @@ interface IModeClass {
 }
 
 function createScraper<Mode extends Modes>(mode: Mode) {
-
   const ModeClass =
     mode instanceof Array
       ? class ModeArrayClass implements IModeClass {
         constructor(public mode: ModeArray) { }
 
-        parser(html: string) {
+        parser(html: string): ModesReturn<ModeArray> {
           const $page = load(html);
           return this.mode.map((callback) => callback($page));
         }
@@ -54,7 +55,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
         ? class ModeCallbackClass implements IModeClass {
           constructor(private mode: ModeCallback) { }
 
-          parser(html: string) {
+          parser(html: string): ModesReturn<ModeCallback> {
             const $page = load(html);
             return this.mode($page);
           }
@@ -78,7 +79,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
         : class ModeObjectClass implements IModeClass {
           constructor(private mode: ModeObject) { }
 
-          parser(html: string) {
+          parser(html: string): ModesReturn<ModeObject> {
             const $page = load(html);
             const object = Object();
 
