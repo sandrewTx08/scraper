@@ -5,7 +5,7 @@ import { ModeArray, ModeCallback, ModeObject, Modes, ModesReturn } from "./types
 function createScraper<Mode extends Modes>(mode: Mode) {
   const modeClass = new (mode instanceof Array
     ? ModeArrayClass
-    : typeof mode === "function"
+    : mode instanceof Function
       ? ModeCallbackClass
       : ModeObjectClass)(<any>mode);
 

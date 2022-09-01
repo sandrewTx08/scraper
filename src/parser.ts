@@ -21,18 +21,20 @@ class ModeArrayClass implements IModeClass<ModeArray> {
     const url_parse = parse(hostname);
 
     return Router().get(url_parse.pathname!, (req, res) => {
+      let hostname_url: string = hostname;
+
       for (const key of Object.keys(req.params)) {
-        hostname = hostname.replace(":" + key, req.params[key]);
+        hostname_url = hostname.replace(":" + key, req.params[key]);
       }
 
       for (const key of Object.keys(req.query)) {
-        const url = new URL(hostname);
+        const url = new URL(hostname_url);
         url.searchParams.append(key, req.query[key] as string);
-        hostname = url.toString();
+        hostname_url = url.toString();
       }
 
       try {
-        request(hostname, (result: ModesReturn<ModeArray>) => {
+        request(hostname_url, (result: ModesReturn<ModeArray>) => {
           res.json(result.map((data) => data.toArray()));
         });
       } catch (error: any) {
@@ -54,18 +56,20 @@ class ModeCallbackClass implements IModeClass<ModeCallback> {
     const url_parse = parse(hostname);
 
     return Router().get(url_parse.pathname!, (req, res) => {
+      let hostname_url: string = hostname;
+
       for (const key of Object.keys(req.params)) {
-        hostname = hostname.replace(":" + key, req.params[key]);
+        hostname_url = hostname.replace(":" + key, req.params[key]);
       }
 
       for (const key of Object.keys(req.query)) {
-        const url = new URL(hostname);
+        const url = new URL(hostname_url);
         url.searchParams.append(key, req.query[key] as string);
-        hostname = url.toString();
+        hostname_url = url.toString();
       }
 
       try {
-        request(hostname, (result: ModesReturn<ModeCallback>) => {
+        request(hostname_url, (result: ModesReturn<ModeCallback>) => {
           res.json(result.toArray());
         });
       } catch (error: any) {
@@ -94,18 +98,20 @@ class ModeObjectClass implements IModeClass<ModeObject> {
     const url_parse = parse(hostname);
 
     return Router().get(url_parse.pathname!, (req, res) => {
+      let hostname_url: string = hostname;
+
       for (const key of Object.keys(req.params)) {
-        hostname = hostname.replace(":" + key, req.params[key]);
+        hostname_url = hostname.replace(":" + key, req.params[key]);
       }
 
       for (const key of Object.keys(req.query)) {
-        const url = new URL(hostname);
+        const url = new URL(hostname_url);
         url.searchParams.append(key, req.query[key] as string);
-        hostname = url.toString();
+        hostname_url = url.toString();
       }
 
       try {
-        request(hostname, (result: ModesReturn<ModeObject>) => {
+        request(hostname_url, (result: ModesReturn<ModeObject>) => {
           const object = Object();
 
           Object.keys(result).forEach((key) => {
