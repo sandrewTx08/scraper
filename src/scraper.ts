@@ -3,11 +3,11 @@ import { ModeArrayClass, ModeCallbackClass, ModeObjectClass } from "./parser";
 import { ModeArray, ModeCallback, ModeObject, Modes, ModesReturn } from "./types";
 
 function createScraper<Mode extends Modes>(mode: Mode) {
-  const modeClass = new (mode instanceof Array
-    ? ModeArrayClass
-    : mode instanceof Function
-      ? ModeCallbackClass
-      : ModeObjectClass)(<any>mode);
+  const modeClass = mode instanceof Array
+  ? new ModeArrayClass(mode)
+  : mode instanceof Function
+  ? new ModeCallbackClass(mode)
+  : new ModeObjectClass(mode);
 
   function staticPage(config: AxiosRequestConfig<any>): Promise<ModesReturn<Mode>>;
   function staticPage(config: AxiosRequestConfig<any>, callback: (result: ModesReturn<Mode>) => void): void;
