@@ -35,7 +35,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
     else return data_result;
   }
 
-  return { request: { staticPage }, express: modeClass.createExpress };
+  return { request: { staticPage }, express: modeClass.createRouter };
 }
 
 export { createScraper, ModeCallback, ModesReturn, ModeObject, Modes, ModeArray };

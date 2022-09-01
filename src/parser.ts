@@ -1,5 +1,6 @@
 import { load } from "cheerio";
-import express from "express";
+import { Router } from "express";
+import { parse, URL } from "url";
 import {
   IModeClass,
   ModeArray,
@@ -16,14 +17,22 @@ class ModeArrayClass implements IModeClass<ModeArray> {
     return this.mode.map((callback) => callback($page));
   }
 
-  createExpress(request: Function, hostname: string) {
-    const app = express();
+  createRouter(request: Function, hostname: string) {
+    const url_parse = parse(hostname);
 
-    return app.use((req, res) => {
-      const url = hostname + req.url.slice(1);
+    return Router().get(url_parse.pathname!, (req, res) => {
+      for (const key of Object.keys(req.params)) {
+        hostname = hostname.replace(":" + key, req.params[key]);
+      }
+
+      for (const key of Object.keys(req.query)) {
+        const url = new URL(hostname);
+        url.searchParams.append(key, req.query[key] as string);
+        hostname = url.toString();
+      }
 
       try {
-        request(url, (result: ModesReturn<ModeArray>) => {
+        request(hostname, (result: ModesReturn<ModeArray>) => {
           res.json(result.map((data) => data.toArray()));
         });
       } catch (error: any) {
@@ -41,14 +50,22 @@ class ModeCallbackClass implements IModeClass<ModeCallback> {
     return this.mode($page);
   }
 
-  createExpress(request: Function, hostname: string) {
-    const app = express();
+  createRouter(request: Function, hostname: string) {
+    const url_parse = parse(hostname);
 
-    return app.use((req, res) => {
-      const url = hostname + req.url.slice(1);
+    return Router().get(url_parse.pathname!, (req, res) => {
+      for (const key of Object.keys(req.params)) {
+        hostname = hostname.replace(":" + key, req.params[key]);
+      }
+
+      for (const key of Object.keys(req.query)) {
+        const url = new URL(hostname);
+        url.searchParams.append(key, req.query[key] as string);
+        hostname = url.toString();
+      }
 
       try {
-        request(url, (result: ModesReturn<ModeCallback>) => {
+        request(hostname, (result: ModesReturn<ModeCallback>) => {
           res.json(result.toArray());
         });
       } catch (error: any) {
@@ -57,6 +74,7 @@ class ModeCallbackClass implements IModeClass<ModeCallback> {
     });
   }
 }
+
 class ModeObjectClass implements IModeClass<ModeObject> {
   constructor(private mode: ModeObject) {}
 
@@ -72,14 +90,22 @@ class ModeObjectClass implements IModeClass<ModeObject> {
     return object;
   }
 
-  createExpress(request: Function, hostname: string) {
-    const app = express();
+  createRouter(request: Function, hostname: string) {
+    const url_parse = parse(hostname);
 
-    return app.use((req, res) => {
-      const url = hostname + req.url.slice(1);
+    return Router().get(url_parse.pathname!, (req, res) => {
+      for (const key of Object.keys(req.params)) {
+        hostname = hostname.replace(":" + key, req.params[key]);
+      }
+
+      for (const key of Object.keys(req.query)) {
+        const url = new URL(hostname);
+        url.searchParams.append(key, req.query[key] as string);
+        hostname = url.toString();
+      }
 
       try {
-        request(url, (result: ModesReturn<ModeObject>) => {
+        request(hostname, (result: ModesReturn<ModeObject>) => {
           const object = Object();
 
           Object.keys(result).forEach((key) => {
