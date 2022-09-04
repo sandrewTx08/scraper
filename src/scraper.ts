@@ -94,7 +94,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
     urls: string[],
     callback: (results: ModesReturn<Mode>[]) => void
   ): void;
-  async function staticPage<
+  function staticPage<
     T extends string | AxiosRequestConfig<any>,
     R extends T extends any[] ? ModesReturn<Mode>[] : ModesReturn<Mode>
   >(urlOrConfigs: T, callback?: (result: R) => void) {
@@ -110,12 +110,11 @@ function createScraper<Mode extends Modes>(mode: Mode) {
       ).then((response) => parser(response.data));
     }
 
-    const data_result = <R>(
-      await (urlOrConfigs instanceof Array ? Promise.all(data) : data[0])
+    const result = <Promise<R>>(
+      (urlOrConfigs instanceof Array ? Promise.all(data) : data[0])
     );
-
-    if (callback) callback(data_result);
-    else return data_result;
+    if (callback) result.then(callback);
+    else return result;
   }
 
   return { request: { staticPage }, express };
