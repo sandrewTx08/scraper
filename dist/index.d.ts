@@ -1,1 +1,1 @@
-export { Scraper, ScraperConfiguration } from "./scraper";
+export { createScraper, Modes, ModeCallback, ModeObject, ModeArray } from "./scraper";
