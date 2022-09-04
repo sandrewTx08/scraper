@@ -30,7 +30,11 @@ function createScraper<Mode extends Modes>(mode: Mode) {
       : TypeError("Invalid type mode.");
   }
 
-  function express(options: { hostname: string; request: typeof staticPage }) {
+  function express(options: {
+    hostname: string;
+    request: typeof staticPage;
+    requestOptions?: AxiosRequestConfig;
+  }) {
     const url_parse = parse(options.hostname);
 
     return Router().get(url_parse.pathname!, (req, res, next) => {
@@ -47,7 +51,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
       }
 
       options
-        .request(hostname_url)
+        .request({ ...options.requestOptions, url: hostname_url })
         .then((result) => {
           res.json(
             result instanceof Array
@@ -70,18 +74,16 @@ function createScraper<Mode extends Modes>(mode: Mode) {
     });
   }
 
+  function staticPage(config: AxiosRequestConfig): Promise<ModesReturn<Mode>>;
   function staticPage(
-    config: AxiosRequestConfig<any>
-  ): Promise<ModesReturn<Mode>>;
-  function staticPage(
-    config: AxiosRequestConfig<any>,
+    config: AxiosRequestConfig,
     callback: (result: ModesReturn<Mode>) => void
   ): void;
   function staticPage(
-    configs: AxiosRequestConfig<any>[]
+    configs: AxiosRequestConfig[]
   ): Promise<ModesReturn<Mode>[]>;
   function staticPage(
-    configs: AxiosRequestConfig<any>[],
+    configs: AxiosRequestConfig[],
     callback: (results: ModesReturn<Mode>[]) => void
   ): void;
   function staticPage(url: string): Promise<ModesReturn<Mode>>;
@@ -95,7 +97,7 @@ function createScraper<Mode extends Modes>(mode: Mode) {
     callback: (results: ModesReturn<Mode>[]) => void
   ): void;
   function staticPage<
-    T extends string | AxiosRequestConfig<any>,
+    T extends string | AxiosRequestConfig,
     R extends T extends any[] ? ModesReturn<Mode>[] : ModesReturn<Mode>
   >(urlOrConfigs: T, callback?: (result: R) => void) {
     const data = [];
